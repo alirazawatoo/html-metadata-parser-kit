@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+project_venv/
+
+# Build output and caches
+dist/
+build/
+.cache/
+.eslintcache
+*.tsbuildinfo
+*.tgz
+
+# Test output
+coverage/
+
+# Logs and scratch
+logs/
+*.log
+npm-debug.log*
+tmp/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editor and OS files
+.DS_Store
+.watchman-cookie*
+.github/
