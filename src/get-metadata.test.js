@@ -352,3 +352,37 @@ describe("get-metadata.js - getMetadata()", () => {
     expect(getMetadata([1])).toEqual(nullMetadata);
   });
 });
+
+describe("get-metadata.js - parsing", () => {
+  test("Parses through an inert DOMParser document", () => {
+    const parseFromString = jest.fn((html, type) =>
+      new window.DOMParser().parseFromString(html, type)
+    );
+    function SpyParser() {
+      this.parseFromString = parseFromString;
+    }
+
+    const html = '<title>Spy</title><img src="x" onerror="window.pwned = 1">';
+    expect(getMetadata(html, { DOMParser: SpyParser }).title).toBe("Spy");
+    expect(parseFromString).toHaveBeenCalledWith(html, "text/html");
+    expect(window.pwned).toBeUndefined();
+  });
+  test("Script tags in the input are never executed", () => {
+    getMetadata("<script>window.scriptRan = true</script><title>x</title>");
+    expect(window.scriptRan).toBeUndefined();
+  });
+  test("Explains how to supply a DOMParser when none exists", () => {
+    const original = window.DOMParser;
+    delete window.DOMParser;
+    try {
+      expect(() => getMetadata("<title>x</title>")).toThrow(
+        /needs a DOMParser/
+      );
+    } finally {
+      window.DOMParser = original;
+    }
+  });
+  test("Blank input skips parsing entirely", () => {
+    expect(getMetadata("   \n ", { DOMParser: null })).toEqual(nullMetadata);
+  });
+});

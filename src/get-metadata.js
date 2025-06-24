@@ -1,4 +1,3 @@
-// Note: Please do not use JSDOM or any other external library/package (sorry)
 /*
 type Metadata = {
   url: string;
@@ -49,6 +48,21 @@ function getMeta(doc, metaName, toArray = false) {
   return null;
 }
 
+// DOMParser builds a detached, inert document: scripts never run and
+// images never load, so untrusted HTML cannot execute while being read.
+// Assigning to innerHTML of an element from the live document would let
+// `<img src=x onerror=...>` fire in a browser.
+function parseHtml(html, DOMParserImpl) {
+  const Parser = DOMParserImpl ?? globalThis.DOMParser;
+  if (typeof Parser !== "function") {
+    throw new TypeError(
+      "getMetadata needs a DOMParser: run it in a browser or pass one, e.g. getMetadata(html, { DOMParser: new JSDOM().window.DOMParser })"
+    );
+  }
+
+  return new Parser().parseFromString(html, "text/html");
+}
+
 /**
  * Gets the URL, site name, title, description, keywords, and author info out of the <head> meta tags from a given html string.
  * 1. Get the URL from the <meta property="og:url"> tag.
@@ -59,12 +73,23 @@ function getMeta(doc, metaName, toArray = false) {
  * 6. Get the author from the <meta name="author"> tag.
  * If any of the above tags are missing or if the values are empty, then the corresponding value will be null.
  * @param html The complete HTML document text to parse
+ * @param options.DOMParser A DOMParser implementation to use outside the browser
  * @returns A Metadata object with data from the HTML <head>
  */
-export default function getMetadata(html) {
-  const doc = document.createElement("html");
-  doc.innerHTML = typeof html === "string" ? html : "";
-  const title = normalizeText(doc.getElementsByTagName("title")?.item(0)?.text);
+export default function getMetadata(html, { DOMParser: DOMParserImpl } = {}) {
+  if (typeof html !== "string" || html.trim() === "") {
+    return {
+      url: null,
+      siteName: null,
+      title: null,
+      description: null,
+      keywords: null,
+      author: null,
+    };
+  }
+
+  const doc = parseHtml(html, DOMParserImpl);
+  const title = normalizeText(doc.title);
 
   return {
     url: getMeta(doc, "url"),
