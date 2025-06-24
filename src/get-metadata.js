@@ -1,13 +1,24 @@
 /*
 type Metadata = {
-  url: string;
-  siteName: string;
-  title: string;
-  description: string;
-  keywords: string[];
-  author: string;
+  url: string | null;
+  siteName: string | null;
+  title: string | null;
+  description: string | null;
+  keywords: string[] | null;
+  author: string | null;
 };
 */
+
+// Meta keys checked for each field, most specific first. A key matches a
+// <meta> tag's `name` or `property` attribute, compared case-insensitively.
+const META_KEYS = {
+  url: ["og:url", "url"],
+  siteName: ["og:site_name", "site_name"],
+  title: ["og:title", "twitter:title"],
+  description: ["og:description", "description", "twitter:description"],
+  keywords: ["keywords"],
+  author: ["author"],
+};
 
 function normalizeText(value) {
   if (typeof value !== "string") {
@@ -29,23 +40,18 @@ function splitKeywords(value) {
     .map((keyword) => keyword.trim())
     .filter(Boolean);
 
-  return keywords.length > 0 ? keywords : null;
+  return keywords.length > 0 ? [...new Set(keywords)] : null;
 }
 
-function getMeta(doc, metaName, toArray = false) {
-  const metas = doc.getElementsByTagName("meta");
-  for (let i = 0; i < metas.length; i += 1) {
-    if (
-      metas[i].name === metaName ||
-      metas[i].getAttribute("property") === metaName ||
-      metas[i].getAttribute("property") === `og:${metaName}`
-    ) {
-      const content = metas[i].getAttribute("content");
-      return toArray ? splitKeywords(content) : normalizeText(content);
-    }
-  }
-
-  return null;
+function emptyMetadata() {
+  return {
+    url: null,
+    siteName: null,
+    title: null,
+    description: null,
+    keywords: null,
+    author: null,
+  };
 }
 
 // DOMParser builds a detached, inert document: scripts never run and
@@ -63,40 +69,66 @@ function parseHtml(html, DOMParserImpl) {
   return new Parser().parseFromString(html, "text/html");
 }
 
+// First non-empty content for every name/property key, in document order.
+function collectMetaContent(doc) {
+  const contentByKey = new Map();
+
+  Array.from(doc.getElementsByTagName("meta")).forEach((meta) => {
+    const content = normalizeText(meta.getAttribute("content"));
+    if (content === null) {
+      return;
+    }
+
+    ["name", "property"].forEach((attribute) => {
+      const key = normalizeText(meta.getAttribute(attribute))?.toLowerCase();
+      if (key && !contentByKey.has(key)) {
+        contentByKey.set(key, content);
+      }
+    });
+  });
+
+  return contentByKey;
+}
+
+function firstContent(contentByKey, keys) {
+  const key = keys.find((candidate) => contentByKey.has(candidate));
+  return key === undefined ? null : contentByKey.get(key);
+}
+
 /**
- * Gets the URL, site name, title, description, keywords, and author info out of the <head> meta tags from a given html string.
- * 1. Get the URL from the <meta property="og:url"> tag.
- * 2. Get the site name from the <meta property="og:site_name"> tag.
- * 3. Get the title from the the <title> tag.
- * 4. Get the description from the <meta property="og:description"> tag or the <meta name="description"> tag.
- * 5. Get the keywords from the <meta name="keywords"> tag and split them into an array.
- * 6. Get the author from the <meta name="author"> tag.
- * If any of the above tags are missing or if the values are empty, then the corresponding value will be null.
- * @param html The complete HTML document text to parse
- * @param options.DOMParser A DOMParser implementation to use outside the browser
- * @returns A Metadata object with data from the HTML <head>
+ * Reads page metadata from an HTML string.
+ *
+ * - url: `og:url`
+ * - siteName: `og:site_name`
+ * - title: the document `<title>`, falling back to `og:title`, then `twitter:title`
+ * - description: `og:description`, then `description`, then `twitter:description`
+ * - keywords: `keywords`, split on commas, trimmed and de-duplicated
+ * - author: `author`
+ *
+ * Meta keys match either the `name` or the `property` attribute,
+ * case-insensitively. Tags with missing or blank `content` are skipped, so a
+ * later tag can still supply the value. Anything not found is `null`.
+ *
+ * @param {unknown} html The HTML document text to parse
+ * @param {{ DOMParser?: typeof DOMParser }} [options] A DOMParser
+ *   implementation to use outside the browser (jsdom, linkedom, happy-dom)
+ * @returns {Metadata} Metadata read from the document
  */
 export default function getMetadata(html, { DOMParser: DOMParserImpl } = {}) {
   if (typeof html !== "string" || html.trim() === "") {
-    return {
-      url: null,
-      siteName: null,
-      title: null,
-      description: null,
-      keywords: null,
-      author: null,
-    };
+    return emptyMetadata();
   }
 
   const doc = parseHtml(html, DOMParserImpl);
-  const title = normalizeText(doc.title);
+  const contentByKey = collectMetaContent(doc);
+  const read = (field) => firstContent(contentByKey, META_KEYS[field]);
 
   return {
-    url: getMeta(doc, "url"),
-    siteName: getMeta(doc, "site_name"),
-    title,
-    description: getMeta(doc, "description"),
-    keywords: getMeta(doc, "keywords", true),
-    author: getMeta(doc, "author"),
+    url: read("url"),
+    siteName: read("siteName"),
+    title: normalizeText(doc.title) ?? read("title"),
+    description: read("description"),
+    keywords: splitKeywords(read("keywords")),
+    author: read("author"),
   };
 }

@@ -386,3 +386,128 @@ describe("get-metadata.js - parsing", () => {
     expect(getMetadata("   \n ", { DOMParser: null })).toEqual(nullMetadata);
   });
 });
+
+describe("get-metadata.js - tag matching", () => {
+  test("Skips a blank tag and uses a later one for the same field", () => {
+    const html = `
+      <meta name="description" content="">
+      <meta property="og:description" content="From Open Graph">`;
+    expect(getMetadata(html).description).toBe("From Open Graph");
+  });
+  test("Prefers og:description over name=description regardless of order", () => {
+    const html = `
+      <meta name="description" content="Plain">
+      <meta property="og:description" content="Open Graph">`;
+    expect(getMetadata(html).description).toBe("Open Graph");
+  });
+  test("Falls back to twitter:description", () => {
+    const html = '<meta name="twitter:description" content="From Twitter">';
+    expect(getMetadata(html).description).toBe("From Twitter");
+  });
+  test("Matches keys in either name or property", () => {
+    const html = `
+      <meta name="og:url" content="https://example.com/by-name">
+      <meta property="author" content="Property Author">`;
+    expect(getMetadata(html)).toMatchObject({
+      url: "https://example.com/by-name",
+      author: "Property Author",
+    });
+  });
+  test("Matches tag names, attribute names and key values case-insensitively", () => {
+    const html = `
+      <META NAME="Description" CONTENT="Shouty">
+      <Meta Property="OG:Site_Name" Content="Mixed Case Site">`;
+    expect(getMetadata(html)).toMatchObject({
+      description: "Shouty",
+      siteName: "Mixed Case Site",
+    });
+  });
+  test("First non-empty duplicate wins", () => {
+    const html = `
+      <meta name="author" content="First">
+      <meta name="author" content="Second">`;
+    expect(getMetadata(html).author).toBe("First");
+  });
+  test("Ignores tags without content", () => {
+    const html = '<meta name="author"><meta name="keywords" content="   ">';
+    expect(getMetadata(html)).toEqual(nullMetadata);
+  });
+  test("Removes duplicate keywords", () => {
+    const html = '<meta name="keywords" content="html, meta, html,meta , og">';
+    expect(getMetadata(html).keywords).toEqual(["html", "meta", "og"]);
+  });
+  test("Decodes HTML entities in content and title", () => {
+    const html = `
+      <title>Tom &amp; Jerry &#8212; &quot;Live&quot;</title>
+      <meta name="description" content="5 &lt; 6 &amp;&amp; caf&eacute;">`;
+    expect(getMetadata(html)).toMatchObject({
+      title: 'Tom & Jerry — "Live"',
+      description: "5 < 6 && café",
+    });
+  });
+});
+
+describe("get-metadata.js - title", () => {
+  test("Falls back to og:title, then twitter:title", () => {
+    expect(
+      getMetadata('<meta property="og:title" content="OG Title">').title
+    ).toBe("OG Title");
+    expect(
+      getMetadata('<meta name="twitter:title" content="Tweet Title">').title
+    ).toBe("Tweet Title");
+  });
+  test("A blank <title> still falls back to og:title", () => {
+    const html =
+      '<title>  </title><meta property="og:title" content="OG Title">';
+    expect(getMetadata(html).title).toBe("OG Title");
+  });
+  test("Collapses whitespace inside the title", () => {
+    expect(getMetadata("<title>\n  Two\n   Lines </title>").title).toBe(
+      "Two Lines"
+    );
+  });
+  test("Ignores an SVG <title> in the body", () => {
+    const html = "<body><svg><title>Icon label</title></svg></body>";
+    expect(getMetadata(html).title).toBeNull();
+  });
+});
+
+describe("get-metadata.js - malformed and large input", () => {
+  test("An unclosed <title> swallows the rest as title text", () => {
+    const html =
+      "<head><title>Unclosed<meta name=author content=Bare-Author><meta name=keywords content='a,b'";
+    const result = getMetadata(html);
+    expect(result.author).toBeNull();
+    expect(result.title).toContain("Unclosed");
+  });
+  test("Reads unquoted attributes in otherwise valid markup", () => {
+    const html =
+      "<title>Ok</title><meta name=author content=Bare-Author><meta name=keywords content='a,b'>";
+    expect(getMetadata(html)).toMatchObject({
+      title: "Ok",
+      author: "Bare-Author",
+      keywords: ["a", "b"],
+    });
+  });
+  test("Finds meta tags placed in the body", () => {
+    const html =
+      '<html><body><p>text</p><meta name="author" content="Late Author"></body></html>';
+    expect(getMetadata(html).author).toBe("Late Author");
+  });
+  test("Plain text input yields empty metadata", () => {
+    expect(getMetadata("just some text < > & not html")).toEqual(nullMetadata);
+  });
+  test("Handles a multi-megabyte document", () => {
+    const filler = "<p>filler &amp; text</p>".repeat(100000);
+    const html = `<head><title>Big</title></head><body>${filler}<meta name="author" content="End"></body>`;
+    expect(getMetadata(html)).toMatchObject({ title: "Big", author: "End" });
+  });
+  test("Handles pathological attribute content without slowing down", () => {
+    const html = `<meta name="description" content="${"\"'<>=".repeat(
+      50000
+    )}">`;
+    const started = Date.now();
+    getMetadata(html);
+    expect(Date.now() - started).toBeLessThan(5000);
+  });
+});
