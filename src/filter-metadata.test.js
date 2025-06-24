@@ -209,3 +209,36 @@ describe("filter-metadata.js - filterMetadata()", () => {
     ).toEqual([exampleMetadata2]);
   });
 });
+
+describe("filter-metadata.js - typography and input shapes", () => {
+  const typographic = {
+    ...nullMetadata,
+    url: "https://example.com/typography",
+    title: "Don’t panic — a “guide”",
+  };
+  const records = [typographic, exampleMetadata2];
+
+  test("Curly apostrophes match straight ones", () => {
+    expect(filterMetadata(records, "don't")).toEqual([typographic]);
+    expect(filterMetadata(records, "dont")).toEqual([typographic]);
+  });
+  test("Curly quotes are ignored", () => {
+    expect(filterMetadata(records, "“guide”")).toEqual([typographic]);
+  });
+  test("Em dash in the query splits words like a hyphen", () => {
+    expect(filterMetadata(records, "panic—guide")).toEqual([typographic]);
+  });
+  test("Punctuation-only query returns everything", () => {
+    expect(filterMetadata(records, " .,!? ")).toEqual(records);
+  });
+  test("Non-string fields are ignored", () => {
+    const odd = { ...nullMetadata, title: 42, keywords: "not-an-array" };
+    expect(filterMetadata([odd], "42")).toEqual([]);
+    expect(filterMetadata([odd], "array")).toEqual([odd]);
+  });
+  test("Long punctuation runs in the query stay fast", () => {
+    const started = Date.now();
+    filterMetadata(metadataArray, `${"-_.".repeat(100000)}google`);
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+});
