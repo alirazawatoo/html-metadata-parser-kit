@@ -2,9 +2,13 @@
   "name": "html-metadata-parser-kit",
   "version": "1.0.0",
   "description": "Dependency-free utilities for extracting and filtering HTML metadata.",
+  "type": "module",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest -o --watch"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write ."
   },
   "license": "ISC",
   "keywords": [
@@ -14,16 +18,14 @@
     "javascript"
   ],
   "devDependencies": {
-    "@babel/preset-env": "^7.18.2",
-    "babel-jest": "^28.1.1",
-    "eslint": "^8.17.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-jest": "^26.5.3",
-    "eslint-plugin-prettier": "^4.0.0",
-    "jest": "^28.1.1",
-    "jest-environment-jsdom": "^28.1.1",
-    "prettier": "^2.7.1"
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^5.1.0",
+    "@vitest/eslint-plugin": "^1.6.28",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.14.0",
+    "jsdom": "^31.0.0",
+    "prettier": "^3.9.10",
+    "vitest": "^5.1.0"
   }
 }

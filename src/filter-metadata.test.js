@@ -1,4 +1,5 @@
-import filterMetadata from "./filter-metadata";
+import { describe, expect, test } from "vitest";
+import filterMetadata from "./filter-metadata.js";
 
 const exampleMetadata1 = {
   url: "https://www.spencergreenberg.com/2021/11/human-behavior-makes-more-sense-when-you-understand-anchor-beliefs/",
@@ -114,7 +115,7 @@ describe("filter-metadata.js - filterMetadata()", () => {
       metadataArraysEqual(filterMetadata(metadataArray, "monkey"), [
         exampleMetadata4,
         exampleMetadata5,
-      ])
+      ]),
     ).toBe(true);
   });
   test("Check URL", () => {
@@ -122,7 +123,7 @@ describe("filter-metadata.js - filterMetadata()", () => {
       metadataArraysEqual(filterMetadata(metadataArray, "Welcome"), [
         exampleMetadata4,
         exampleMetadata5,
-      ])
+      ]),
     ).toBe(true);
   });
   test("Multiple words", () => {
@@ -130,15 +131,15 @@ describe("filter-metadata.js - filterMetadata()", () => {
       metadataArraysEqual(filterMetadata(metadataArray, "WELCOME INTERNET"), [
         exampleMetadata4,
         exampleMetadata5,
-      ])
+      ]),
     ).toBe(true);
   });
   test("Multiple words: 3 results", () => {
     expect(
       metadataArraysEqual(
         filterMetadata(metadataArray, "SpencerGreenberg chimps search"),
-        [exampleMetadata1, exampleMetadata3, exampleMetadata5]
-      )
+        [exampleMetadata1, exampleMetadata3, exampleMetadata5],
+      ),
     ).toBe(true);
   });
   test("Multiple words, comma separated", () => {
@@ -146,7 +147,7 @@ describe("filter-metadata.js - filterMetadata()", () => {
       metadataArraysEqual(filterMetadata(metadataArray, "call, my, name"), [
         exampleMetadata1,
         exampleMetadata2,
-      ])
+      ]),
     ).toBe(true);
   });
   test("Hypenated word: direct match", () => {
@@ -158,8 +159,8 @@ describe("filter-metadata.js - filterMetadata()", () => {
     expect(
       metadataArraysEqual(
         filterMetadata(mdSpecialCharactersArray, "light-year"),
-        [specialCharacterEx2, specialCharacterEx3]
-      )
+        [specialCharacterEx2, specialCharacterEx3],
+      ),
     ).toBe(true);
   });
   test("Acronym: remove query periods", () => {
@@ -199,13 +200,13 @@ describe("filter-metadata.js - filterMetadata()", () => {
     expect(
       metadataArraysEqual(
         filterMetadata(metadataArray, ["spencer", "search"]),
-        [exampleMetadata1, exampleMetadata3]
-      )
+        [exampleMetadata1, exampleMetadata3],
+      ),
     ).toBe(true);
   });
   test("Skips invalid metadata entries", () => {
     expect(
-      filterMetadata(metadataArrayWithInvalidEntry, "description")
+      filterMetadata(metadataArrayWithInvalidEntry, "description"),
     ).toEqual([exampleMetadata2]);
   });
 });

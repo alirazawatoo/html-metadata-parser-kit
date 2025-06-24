@@ -1,4 +1,5 @@
-import getMetadata from "./get-metadata";
+import { describe, expect, test, vi } from "vitest";
+import getMetadata from "./get-metadata.js";
 
 const htmlExBasic = `
 <!DOCTYPE html>
@@ -355,8 +356,8 @@ describe("get-metadata.js - getMetadata()", () => {
 
 describe("get-metadata.js - parsing", () => {
   test("Parses through an inert DOMParser document", () => {
-    const parseFromString = jest.fn((html, type) =>
-      new window.DOMParser().parseFromString(html, type)
+    const parseFromString = vi.fn((html, type) =>
+      new globalThis.DOMParser().parseFromString(html, type),
     );
     function SpyParser() {
       this.parseFromString = parseFromString;
@@ -365,21 +366,21 @@ describe("get-metadata.js - parsing", () => {
     const html = '<title>Spy</title><img src="x" onerror="window.pwned = 1">';
     expect(getMetadata(html, { DOMParser: SpyParser }).title).toBe("Spy");
     expect(parseFromString).toHaveBeenCalledWith(html, "text/html");
-    expect(window.pwned).toBeUndefined();
+    expect(globalThis.pwned).toBeUndefined();
   });
   test("Script tags in the input are never executed", () => {
     getMetadata("<script>window.scriptRan = true</script><title>x</title>");
-    expect(window.scriptRan).toBeUndefined();
+    expect(globalThis.scriptRan).toBeUndefined();
   });
   test("Explains how to supply a DOMParser when none exists", () => {
-    const original = window.DOMParser;
-    delete window.DOMParser;
+    const original = globalThis.DOMParser;
+    delete globalThis.DOMParser;
     try {
       expect(() => getMetadata("<title>x</title>")).toThrow(
-        /needs a DOMParser/
+        /needs a DOMParser/,
       );
     } finally {
-      window.DOMParser = original;
+      globalThis.DOMParser = original;
     }
   });
   test("Blank input skips parsing entirely", () => {
@@ -450,10 +451,10 @@ describe("get-metadata.js - tag matching", () => {
 describe("get-metadata.js - title", () => {
   test("Falls back to og:title, then twitter:title", () => {
     expect(
-      getMetadata('<meta property="og:title" content="OG Title">').title
+      getMetadata('<meta property="og:title" content="OG Title">').title,
     ).toBe("OG Title");
     expect(
-      getMetadata('<meta name="twitter:title" content="Tweet Title">').title
+      getMetadata('<meta name="twitter:title" content="Tweet Title">').title,
     ).toBe("Tweet Title");
   });
   test("A blank <title> still falls back to og:title", () => {
@@ -463,7 +464,7 @@ describe("get-metadata.js - title", () => {
   });
   test("Collapses whitespace inside the title", () => {
     expect(getMetadata("<title>\n  Two\n   Lines </title>").title).toBe(
-      "Two Lines"
+      "Two Lines",
     );
   });
   test("Ignores an SVG <title> in the body", () => {
@@ -504,7 +505,7 @@ describe("get-metadata.js - malformed and large input", () => {
   });
   test("Handles pathological attribute content without slowing down", () => {
     const html = `<meta name="description" content="${"\"'<>=".repeat(
-      50000
+      50000,
     )}">`;
     const started = Date.now();
     getMetadata(html);

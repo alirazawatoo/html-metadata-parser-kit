@@ -12,7 +12,7 @@ const metadata = getMetadata(`
     <meta name="description" content="A compact example">
     <meta name="keywords" content="html, metadata">
   </head>
-`)
+`);
 ```
 
 The result contains `url`, `siteName`, `title`, `description`, `keywords`, and `author`. Missing or blank values become `null`; comma-separated keywords become a trimmed array.
@@ -20,7 +20,7 @@ The result contains `url`, `siteName`, `title`, `description`, `keywords`, and `
 ## Filter records
 
 ```js
-filterMetadata(records, "example metadata")
+filterMetadata(records, "example metadata");
 ```
 
 Search is case-insensitive, removes common punctuation, normalizes hyphens and underscores, and matches when any query token occurs in any record field. An empty query returns the original array.

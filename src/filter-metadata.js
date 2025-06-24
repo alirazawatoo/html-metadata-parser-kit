@@ -86,7 +86,7 @@ export default function filterMetadata(metadata, query) {
       .filter(Boolean);
 
     return tokens.some((token) =>
-      values.some((candidateValue) => candidateValue.includes(token))
+      values.some((candidateValue) => candidateValue.includes(token)),
     );
   });
 }

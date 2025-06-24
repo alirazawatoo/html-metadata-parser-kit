@@ -62,7 +62,7 @@ function parseHtml(html, DOMParserImpl) {
   const Parser = DOMParserImpl ?? globalThis.DOMParser;
   if (typeof Parser !== "function") {
     throw new TypeError(
-      "getMetadata needs a DOMParser: run it in a browser or pass one, e.g. getMetadata(html, { DOMParser: new JSDOM().window.DOMParser })"
+      "getMetadata needs a DOMParser: run it in a browser or pass one, e.g. getMetadata(html, { DOMParser: new JSDOM().window.DOMParser })",
     );
   }
 
