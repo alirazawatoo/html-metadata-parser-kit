@@ -1,13 +1,4 @@
-/*
-type Metadata = {
-  url: string | null;
-  siteName: string | null;
-  title: string | null;
-  description: string | null;
-  keywords: string[] | null;
-  author: string | null;
-};
-*/
+/** @typedef {import("./index.js").Metadata} Metadata */
 
 // ASCII punctuation plus typographic quotes are dropped so "N.A.S.A." and
 // "don’t" match "nasa" and "dont". Hyphen, underscore and the Unicode

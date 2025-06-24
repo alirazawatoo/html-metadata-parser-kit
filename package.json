@@ -3,12 +3,31 @@
   "version": "1.0.0",
   "description": "Dependency-free utilities for extracting and filtering HTML metadata.",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./src/index.d.ts",
+  "files": [
+    "src/index.js",
+    "src/index.d.ts",
+    "src/get-metadata.js",
+    "src/filter-metadata.js"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.22"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint . && prettier --check .",
-    "format": "prettier --write ."
+    "lint": "eslint . && prettier --check . && tsc -p tsconfig.json",
+    "format": "prettier --write .",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "license": "ISC",
   "keywords": [
@@ -26,6 +45,7 @@
     "globals": "^17.14.0",
     "jsdom": "^31.0.0",
     "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }
 }

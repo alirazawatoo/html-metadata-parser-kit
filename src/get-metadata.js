@@ -1,13 +1,4 @@
-/*
-type Metadata = {
-  url: string | null;
-  siteName: string | null;
-  title: string | null;
-  description: string | null;
-  keywords: string[] | null;
-  author: string | null;
-};
-*/
+/** @typedef {import("./index.js").Metadata} Metadata */
 
 // Meta keys checked for each field, most specific first. A key matches a
 // <meta> tag's `name` or `property` attribute, compared case-insensitively.
@@ -110,8 +101,8 @@ function firstContent(contentByKey, keys) {
  * later tag can still supply the value. Anything not found is `null`.
  *
  * @param {unknown} html The HTML document text to parse
- * @param {{ DOMParser?: typeof DOMParser }} [options] A DOMParser
- *   implementation to use outside the browser (jsdom, linkedom, happy-dom)
+ * @param {import("./index.js").GetMetadataOptions} [options] Pass a
+ *   DOMParser implementation (jsdom, linkedom, happy-dom) outside the browser
  * @returns {Metadata} Metadata read from the document
  */
 export default function getMetadata(html, { DOMParser: DOMParserImpl } = {}) {
